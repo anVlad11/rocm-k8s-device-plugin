@@ -99,14 +99,18 @@ func GetAMDGPUs() map[string]map[string]int {
 	for _, path := range matches {
 		glog.Info(path)
 		devPaths, _ := filepath.Glob(path + "/drm/*")
-		devices[filepath.Base(path)] = make(map[string]int)
+		basePath := filepath.Base(path)
+		for i := 0; i < 12; i++ {
+			virtualBasePath := basePath + "::" + strconv.Itoa(i)
+			devices[virtualBasePath] = make(map[string]int)
 
-		for _, devPath := range devPaths {
-			switch name := filepath.Base(devPath); {
-			case name[0:4] == "card":
-				devices[filepath.Base(path)][name[0:4]], _ = strconv.Atoi(name[4:])
-			case name[0:7] == "renderD":
-				devices[filepath.Base(path)][name[0:7]], _ = strconv.Atoi(name[7:])
+			for _, devPath := range devPaths {
+				switch name := filepath.Base(devPath); {
+				case name[0:4] == "card":
+					devices[virtualBasePath][name[0:4]], _ = strconv.Atoi(name[4:])
+				case name[0:7] == "renderD":
+					devices[virtualBasePath][name[0:7]], _ = strconv.Atoi(name[7:])
+				}
 			}
 		}
 	}

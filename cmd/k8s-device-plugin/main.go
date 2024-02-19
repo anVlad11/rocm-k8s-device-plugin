@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ROCm/k8s-device-plugin/internal/pkg/amdgpu"
@@ -145,7 +146,8 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 			devs[i] = dev
 			i++
 
-			numas, err := hw.GetNUMANodes(id)
+			realID := strings.Split(id, "::")[0]
+			numas, err := hw.GetNUMANodes(realID)
 			glog.Infof("Watching GPU with bus ID: %s NUMA Node: %+v", id, numas)
 			if err != nil {
 				glog.Error(err)
@@ -221,10 +223,11 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		car.Devices = append(car.Devices, dev)
 
 		for _, id := range req.DevicesIDs {
-			glog.Infof("Allocating device ID: %s", id)
+			glog.Infof("Allocating virtual device ID: %s", id)
 
 			for k, v := range p.AMDGPUs[id] {
 				devpath := fmt.Sprintf("/dev/dri/%s%d", k, v)
+				glog.Infof("Allocating virtual device ID: %s, path: %s", id, devpath)
 				dev = new(pluginapi.DeviceSpec)
 				dev.HostPath = devpath
 				dev.ContainerPath = devpath
